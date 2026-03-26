@@ -1,22 +1,17 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import dotenv from "dotenv";
+import { Admin } from "../entities/Admin";
 
 dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-
   url: process.env.DB_CONNECTION_STRING,
-
   ssl: {
-    rejectUnauthorized: false, // 🔥 REQUIRED for Neon
+    rejectUnauthorized: false,
   },
-
-  synchronize: true, // ⚠️ only for development
-  logging: true,
-
-  entities: [__dirname + "/../entities/*.ts"],
-  migrations: [],
-  subscribers: [],
+  synchronize: true, // Auto-creates tables in development
+  logging: false,
+  entities: [Admin],
 });
