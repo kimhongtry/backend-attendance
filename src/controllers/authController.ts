@@ -1,45 +1,28 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { AppDataSource } from "../config/db";
-import { Admin } from "../entities/Admin";
+import { AuthService } from "../services/authService";
+import { LoginRequestDto } from "../dtos/request/auth";
+const authService = new AuthService();
 
 export const loginAdmin = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
   try {
-    const adminRepo = AppDataSource.getRepository(Admin);
+    // Cast the body to our Request DTO
+    const loginData: LoginRequestDto = req.body;
 
-    // Find the admin
-    const admin = await adminRepo.findOne({
-      where: { email },
-      select: ["id", "email", "password_hash"], // password_hash is now just plain text
-    });
+    // Call the service logic
+    const result = await authService.login(loginData);
 
-    if (!admin) {
-      return res
-        .status(401)
-        .json({ success: false, message: "User not found" });
+    // If login failed, send 401
+    if (!result.success) {
+      return res.status(401).json(result);
     }
 
-    // 🔴 PLAIN TEXT CHECK (No more bcrypt)
-    const isMatch = password === admin.password_hash;
-
-    if (!isMatch) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Wrong password" });
-    }
-
-    // Generate JWT (Keep this for security/dashboard access)
-    const secret = process.env.JWT_SECRET as string;
-    const token = jwt.sign({ id: admin.id, role: "admin" }, secret, {
-      expiresIn: "8h",
-    });
-
-    return res.json({ success: true, token, admin: { email: admin.email } });
+    // If success, send 200
+    return res.status(200).json(result);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("Auth Controller Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An unexpected server error occurred",
+    });
   }
 };
