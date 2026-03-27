@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import dotenv from "dotenv";
 import { Admin } from "../entities/Admin";
 import { Teacher } from "../entities/teachers";
+import { Attendance } from "../entities/attendance";
 
 dotenv.config();
 
@@ -14,5 +15,5 @@ export const AppDataSource = new DataSource({
   },
   synchronize: true, // Auto-creates tables in development
   logging: false,
-  entities: [Admin, Teacher],
+  entities: [Admin, Teacher, Attendance],
 });

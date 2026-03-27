@@ -6,19 +6,18 @@ import {
   CreateDateColumn,
 } from "typeorm";
 import { Teacher } from "./teachers";
-
 @Entity("attendance")
 export class Attendance {
   @PrimaryGeneratedColumn()
   id!: number;
 
   @Column({ type: "date" })
-  date!: string; // Stored as YYYY-MM-DD
+  date!: string; // Format: YYYY-MM-DD
 
   @Column()
   status!: string; // 'present', 'absent', or 'permission'
 
-  // This links the attendance record to a specific teacher
+  // Many attendance records can belong to one teacher
   @ManyToOne(() => Teacher, (teacher) => teacher.id, { onDelete: "CASCADE" })
   teacher!: Teacher;
 

@@ -1,33 +1,22 @@
 import { Request, Response } from "express";
-import { AppDataSource } from "../config/db";
-import { Attendance } from "../entities/attendance";
+import { AttendanceService } from "../services/attendanceService";
+import { MarkAttendanceRequestDto } from "../dtos/request/attendance";
+// Create the instance once at the top
+const attendanceService = new AttendanceService();
 
 export const markAttendance = async (req: Request, res: Response) => {
-  const { date, records } = req.body;
-  const attendanceRepo = AppDataSource.getRepository(Attendance);
-
   try {
-    // We loop through the IDs sent from the frontend
-    const savePromises = Object.entries(records).map(
-      async ([teacherId, status]) => {
-        // Create a new record for each teacher
-        const entry = attendanceRepo.create({
-          date: date,
-          status: status as string,
-          teacher: { id: parseInt(teacherId) } as any,
-        });
-        return attendanceRepo.save(entry);
-      },
-    );
+    const dto: MarkAttendanceRequestDto = req.body;
 
-    await Promise.all(savePromises);
+    // Call the instance method (no 'static' errors here!)
+    const result = await attendanceService.markTeachersAttendance(dto);
 
-    res.status(201).json({
-      success: true,
-      message: "Attendance records synced to Neon successfully!",
-    });
+    return res.status(201).json(result);
   } catch (error) {
-    console.error("Attendance Save Error:", error);
-    res.status(500).json({ message: "Failed to save attendance records." });
+    console.error("Attendance Controller Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to record attendance.",
+    });
   }
 };
