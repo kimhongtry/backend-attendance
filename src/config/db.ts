@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { DataSource } from "typeorm";
 import dotenv from "dotenv";
 import { Admin } from "../entities/Admin";
+import { Teacher } from "../entities/teachers";
 
 dotenv.config();
 
@@ -13,5 +14,5 @@ export const AppDataSource = new DataSource({
   },
   synchronize: true, // Auto-creates tables in development
   logging: false,
-  entities: [Admin],
+  entities: [Admin, Teacher],
 });
