@@ -14,6 +14,9 @@ export class Attendance {
   @Column({ type: "date" })
   date!: string; // Format: YYYY-MM-DD
 
+  @Column({ nullable: true })
+  checkInMethod?: string; // 'QR_SCAN' or 'MANUAL'
+
   @Column()
   status!: string; // 'present', 'absent', or 'permission'
 
