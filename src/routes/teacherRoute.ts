@@ -2,6 +2,8 @@ import { Router } from "express";
 import {
   createTeacher,
   getAllTeachers,
+  updateTeacher,
+  deleteTeacher,
 } from "../controllers/teacherController";
 import { verifyToken } from "../middleware/auth";
 import { markAttendance } from "../controllers/attendanceController";
@@ -13,5 +15,7 @@ router.get("/all", verifyToken, getAllTeachers);
 
 // This makes the URL: http://localhost:5000/api/teachers/add
 router.post("/add", verifyToken, createTeacher);
+router.put("/:id", verifyToken, updateTeacher);
+router.delete("/:id", verifyToken, deleteTeacher);
 router.post("/mark", verifyToken, markAttendance);
 export default router;
