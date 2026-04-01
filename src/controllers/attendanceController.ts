@@ -9,16 +9,17 @@ interface AuthenticatedRequest extends Request {
   user: { id: number };
 }
 
-// Create the instance once at the top
+// ✅ Single instance at the top — correct pattern
 const attendanceService = new AttendanceService();
 
+// ─────────────────────────────────────────────
+// ADMIN: Manual bulk attendance entry
+// POST /api/attendance/mark
+// ─────────────────────────────────────────────
 export const markAttendance = async (req: Request, res: Response) => {
   try {
     const dto: MarkAttendanceRequestDto = req.body;
-
-    // Call the instance method (no 'static' errors here!)
     const result = await attendanceService.markTeachersAttendance(dto);
-
     return res.status(201).json(result);
   } catch (error) {
     console.error("Attendance Controller Error:", error);
@@ -28,15 +29,19 @@ export const markAttendance = async (req: Request, res: Response) => {
     });
   }
 };
+
+// ─────────────────────────────────────────────
+// TEACHER: QR check-in (requires login token)
+// POST /api/attendance/qr-checkin
+// ─────────────────────────────────────────────
 export const qrCheckIn = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // 1. Get Teacher ID from the token (the teacher must be logged in on their phone)
     const teacherId = req.user.id;
     const today = new Date().toISOString().split("T")[0];
 
     const attendanceRepo = AppDataSource.getRepository(Attendance);
 
-    // 2. Prevent double check-in
+    // ✅ Prevent double check-in
     const existing = await attendanceRepo
       .createQueryBuilder("attendance")
       .leftJoinAndSelect("attendance.teacher", "teacher")
@@ -45,66 +50,145 @@ export const qrCheckIn = async (req: AuthenticatedRequest, res: Response) => {
       .getOne();
 
     if (existing) {
-      return res
-        .status(400)
-        .json({ message: "You are already marked present today!" });
+      return res.status(400).json({
+        success: false,
+        message: "You are already marked present today!",
+      });
     }
 
-    // 3. Save "Present" status
+    // ✅ Save present record
     const newRecord = attendanceRepo.create({
       date: today,
       status: "present",
+      checkInMethod: "QR_SCAN",
     });
     newRecord.teacher = { id: teacherId } as any;
-    newRecord.checkInMethod = "QR_SCAN";
 
     await attendanceRepo.save(newRecord);
-    return res
-      .status(200)
-      .json({ success: true, message: "Check-in successful!" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Check-in successful!",
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Server error during check-in" });
+    console.error("QR Check-in Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error during check-in.",
+    });
   }
 };
+
+// ─────────────────────────────────────────────
+// PUBLIC: QR check-in (no login — WiFi gated)
+// POST /api/attendance/public-checkin
+// ─────────────────────────────────────────────
 export const publicCheckIn = async (req: Request, res: Response) => {
   try {
     const { staffId, name } = req.body;
+
+    if (!staffId || !name) {
+      return res.status(400).json({
+        success: false,
+        message: "Staff ID and name are required.",
+      });
+    }
+
     const today = new Date().toISOString().split("T")[0];
+
+    // ✅ WiFi/IP validation — works for both IPv4 and IPv6-mapped addresses
+    const clientIp = req.ip || req.socket.remoteAddress || "";
+    const isLocal =
+      clientIp.includes("192.168.11") || // LAN IPv4
+      clientIp === "::1" || // localhost IPv6
+      clientIp === "127.0.0.1"; // localhost IPv4
+
+    if (!isLocal) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access Denied: You must be connected to the PSE Campus Wi-Fi.",
+      });
+    }
 
     const attendanceRepo = AppDataSource.getRepository(Attendance);
     const teacherRepo = AppDataSource.getRepository(Teacher);
 
-    // 1. Verify this teacher actually exists in your DB
+    // ✅ Verify teacher exists by staffId
     const teacher = await teacherRepo.findOne({ where: { staffId } });
     if (!teacher) {
-      return res.status(404).json({ message: "Staff ID not found in system." });
+      return res.status(404).json({
+        success: false,
+        message: "Staff ID not found in system.",
+      });
     }
 
-    // 2. Double-check on server side as well
+    // ✅ Prevent double check-in
     const existing = await attendanceRepo
       .createQueryBuilder("attendance")
-      .leftJoinAndSelect("attendance.teacher", "teacher")
-      .where("teacher.id = :teacherId", { teacherId: teacher.id })
+      .where("attendance.teacherId = :id", { id: teacher.id })
       .andWhere("attendance.date = :today", { today })
       .getOne();
 
     if (existing) {
-      return res
-        .status(400)
-        .json({ message: "Attendance already recorded for today." });
+      return res.status(400).json({
+        success: false,
+        message: "Attendance already recorded for today.",
+      });
     }
 
-    // 3. Save the record
+    // ✅ Save record
     const record = attendanceRepo.create({
       date: today,
       status: "present",
       checkInMethod: "QR_PUBLIC",
+      teacher: teacher,
     });
-    record.teacher = { id: teacher.id } as any;
 
     await attendanceRepo.save(record);
-    return res.status(200).json({ success: true });
+
+    return res.status(200).json({
+      success: true,
+      message: `Attendance marked! Welcome, ${teacher.name}.`,
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    console.error("Public Check-in Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error during check-in.",
+    });
+  }
+};
+// ─────────────────────────────────────────────
+// ADD THIS to attendanceController.ts
+// GET /api/attendance/today
+// Returns all attendance records for today so the
+// frontend can sync QR scans in real-time
+// ─────────────────────────────────────────────
+
+export const getTodayAttendance = async (req: Request, res: Response) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const attendanceRepo = AppDataSource.getRepository(Attendance);
+
+    const records = await attendanceRepo
+      .createQueryBuilder("attendance")
+      .leftJoinAndSelect("attendance.teacher", "teacher")
+      .where("attendance.date = :today", { today })
+      .getMany();
+
+    // ✅ Return flat array the frontend expects
+    const result = records.map((r) => ({
+      teacherId: r.teacher.id,
+      status: r.status,
+      checkInMethod: r.checkInMethod,
+    }));
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Get Today Attendance Error:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch today's attendance." });
   }
 };
