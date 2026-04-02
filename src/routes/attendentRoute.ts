@@ -4,6 +4,9 @@ import {
   qrCheckIn,
   markAttendance,
   getTodayAttendance,
+  getDailyReport,
+  getWeeklyReport,
+  sendTelegramReport,
 } from "../controllers/attendanceController";
 import { verifyToken } from "../middleware/auth"; // your existing middleware
 
@@ -18,5 +21,13 @@ router.post("/qr-checkin", verifyToken, qrCheckIn as unknown as RequestHandler);
 // ✅ Admin manual bulk entry (token required)
 router.post("/mark", verifyToken, markAttendance as RequestHandler);
 router.get("/today", verifyToken, getTodayAttendance);
+// ✅ Report routes — these were missing
+router.get("/report/daily", verifyToken, getDailyReport as RequestHandler);
+router.get("/report/weekly", verifyToken, getWeeklyReport as RequestHandler);
 
+router.post(
+  "/report/send-telegram",
+  verifyToken,
+  sendTelegramReport as RequestHandler,
+);
 export default router;
