@@ -1,25 +1,21 @@
 import { Router } from "express";
-import { AppDataSource } from "../config/db";
-import { Teacher } from "../entities/teachers";
+import {
+  createTeacher,
+  getAllTeachers,
+  updateTeacher,
+  deleteTeacher,
+} from "../controllers/teacherController";
+import { verifyToken } from "../middleware/auth";
+import { markAttendance } from "../controllers/attendanceController";
 
 const router = Router();
 
-// 👉 create repository HERE (this replaces your missing repo file)
-const teacherRepo = AppDataSource.getRepository(Teacher);
+// This makes the URL: http://localhost:5000/api/teachers/all
+router.get("/all", verifyToken, getAllTeachers);
 
-// ✅ GET ALL
-router.get("/all", async (req, res) => {
-  const teachers = await teacherRepo.find();
-  res.json(teachers);
-});
-
-// ✅ ADD
-router.post("/add", async (req, res) => {
-  const teacher = teacherRepo.create(req.body);
-  await teacherRepo.save(teacher);
-  res.json({ message: "Added" });
-});
-
-
-
+// This makes the URL: http://localhost:5000/api/teachers/add
+router.post("/add", verifyToken, createTeacher);
+router.put("/:id", verifyToken, updateTeacher);
+router.delete("/:id", verifyToken, deleteTeacher);
+router.post("/mark", verifyToken, markAttendance);
 export default router;
