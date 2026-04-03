@@ -8,49 +8,54 @@ export class DashboardService {
 
   async getStats() {
     try {
-      const teacherRepo = AppDataSource.getRepository(Teacher);
-      const attendanceRepo = AppDataSource.getRepository(Attendance);
+      // 1. Get Today's Date String (YYYY-MM-DD)
+      const today = new Date();
+      const todayDate = today.toISOString().split('T')[0];
 
-      const totalTeachers = await teacherRepo.count();
-      const todayDate = new Date().toISOString().split('T')[0];
-      const todayDateString = new Date().toLocaleDateString('en-CA');
+      // 2. Calculate Yesterday's Date String (YYYY-MM-DD)
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const yesterdayDate = yesterday.toISOString().split('T')[0];
 
-      // 1. FIXED: Only count UNIQUE teachers marked "present" today
-const presentToday = await this.attendanceRepo.createQueryBuilder("attendance")
-    .select("COUNT(DISTINCT attendance.teacherId)", "count")
-    .where("attendance.status = :status", { status: "present" })
-    .andWhere("attendance.date = :today", { today: todayDate }) // Use exact match '=' instead of LIKE
-    .getRawOne();
+      const totalTeachers = await this.teacherRepo.count();
 
-// Absent Today
-const absentToday = await this.attendanceRepo.createQueryBuilder("attendance")
-    .select("COUNT(DISTINCT attendance.teacherId)", "count")
-    .where("attendance.status = :status", { status: "absent" })
-    .andWhere("attendance.date = :today", { today: todayDate })
-    .getRawOne();
-      // 3. FIXED: Only count UNIQUE teachers marked "permission" today
-      const permissionToday = await attendanceRepo.createQueryBuilder("attendance")
+      // --- COUNTS (Still for Today) ---
+      const presentToday = await this.attendanceRepo.createQueryBuilder("attendance")
+        .select("COUNT(DISTINCT attendance.teacherId)", "count")
+        .where("attendance.status = :status", { status: "present" })
+        .andWhere("attendance.date = :today", { today: todayDate })
+        .getRawOne();
+
+      const absentToday = await this.attendanceRepo.createQueryBuilder("attendance")
+        .select("COUNT(DISTINCT attendance.teacherId)", "count")
+        .where("attendance.status = :status", { status: "absent" })
+        .andWhere("attendance.date = :today", { today: todayDate })
+        .getRawOne();
+
+      const permissionToday = await this.attendanceRepo.createQueryBuilder("attendance")
         .select("COUNT(DISTINCT attendance.teacherId)", "count")
         .where("attendance.status = :status", { status: "permission" })
         .andWhere("attendance.date = :today", { today: todayDate })
         .getRawOne();
 
-      const recentRaw = await attendanceRepo.find({
+      // --- TABLE RECORDS (Filter specifically for Yesterday) ---
+      const yesterdayRecordsRaw = await this.attendanceRepo.find({
+        where: { date: yesterdayDate }, // This filters for Apr 2
         relations: ["teacher"],
-        order: { date: "DESC" },
-        take: 5
+        order: { createdAt: "DESC" }, 
       });
 
       return {
         totalTeachers,
-        // We use parseInt because getRawOne returns a string
-        presentToday: parseInt(presentToday.count),
-        absentToday: parseInt(absentToday.count),
-        permissionToday: parseInt(permissionToday.count),
-        records: recentRaw.map(r => ({
+        presentToday: parseInt(presentToday.count) || 0,
+        absentToday: parseInt(absentToday.count) || 0,
+        permissionToday: parseInt(permissionToday.count) || 0,
+        records: yesterdayRecordsRaw.map(r => ({
           name: r.teacher?.name || "Unknown",
           status: r.status,
-          time: new Date(r.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          // Extract time from createdAt
+          time: new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          // Show "Apr 2" or "Yesterday"
           date: new Date(r.date).toLocaleDateString([], { month: 'short', day: 'numeric' })
         }))
       };
@@ -58,5 +63,5 @@ const absentToday = await this.attendanceRepo.createQueryBuilder("attendance")
       console.error("Dashboard Service Error:", error);
       throw error;
     }
-}
+  }
 }

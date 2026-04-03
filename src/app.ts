@@ -5,6 +5,7 @@ import teacherRoutes from "./routes/teacherRoute";
 import attendanceRoutes from "./routes/attendentRoute"; // ✅ ADDED — was missing, broke everything
 import dashboardRoute from "./routes/dashboardRoute"; // FIXED: 'd' instead of 't'
 
+
 const app: Application = express();
 
 // ✅ Single CORS config — duplicates removed
