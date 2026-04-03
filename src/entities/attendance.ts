@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
 } from "typeorm";
 import { Teacher } from "./teachers";
+
 @Entity("attendance")
 export class Attendance {
   @PrimaryGeneratedColumn()
@@ -15,13 +16,13 @@ export class Attendance {
   date!: string; // Format: YYYY-MM-DD
 
   @Column({ nullable: true })
-  checkInMethod?: string; // 'QR_SCAN' or 'MANUAL'
+  checkInMethod?: string; 
 
   @Column()
-  status!: string; // 'present', 'absent', or 'permission'
+  status!: string; // Important: Check if you save 'present' or 'Present'
 
-  // Many attendance records can belong to one teacher
-  @ManyToOne(() => Teacher, (teacher) => teacher.id, { onDelete: "CASCADE" })
+  // Link this to the 'attendances' array in your Teacher entity
+  @ManyToOne(() => Teacher, (teacher) => teacher.attendances, { onDelete: "CASCADE" })
   teacher!: Teacher;
 
   @CreateDateColumn()

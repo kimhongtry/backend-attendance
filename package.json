@@ -18,6 +18,7 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.20.0",
     "pg": "^8.20.0",
     "typeorm": "^0.3.28"
   },
@@ -32,5 +33,12 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
+  },
+  "success": true,
+  "data": {
+    "totalTeachers": 12,
+    "presentToday": 10,
+    "absentToday": 1,
+    "permissionToday": 1
   }
 }

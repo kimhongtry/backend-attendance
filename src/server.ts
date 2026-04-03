@@ -18,3 +18,6 @@ AppDataSource.initialize()
     });
   })
   .catch((error) => console.log("❌ Connection error:", error));
+app.get("/", (req, res) => {
+  res.send("🚀 Backend is running and healthy!");
+});
