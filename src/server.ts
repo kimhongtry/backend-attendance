@@ -27,6 +27,7 @@ AppDataSource.initialize()
       console.log(`🌐 Phone should visit: http://192.168.11.36:5000`);
     });
   })
-  .catch((error) => {
-    console.log("❌ Connection error:", error);
-  });
+  .catch((error) => console.log("❌ Connection error:", error));
+app.get("/", (req, res) => {
+  res.send("🚀 Backend is running and healthy!");
+});

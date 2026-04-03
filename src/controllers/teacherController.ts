@@ -37,7 +37,7 @@ export const getAllTeachers = async (req: Request, res: Response) => {
 export const updateTeacher = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
-
+8789 
     // Safety check: Ensure ID is a valid number
     if (isNaN(id)) {
       return res
