@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
 
 AppDataSource.initialize()
   .then(() => {
-    console.log("🚀 Database connected to Neon!");
+    console.log("🚀 Database connected to localhost!");
 
     // This tells the server to listen to the Wi-Fi, not just your laptop.
     app.listen(Number(PORT), "0.0.0.0", () => {
