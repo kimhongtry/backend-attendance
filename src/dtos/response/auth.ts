@@ -7,3 +7,17 @@ export interface LoginResponseDto {
     email: string;
   };
 }
+// dtos/response/auth.ts  — add this
+export interface ChangePasswordResponseDto {
+  success: boolean;
+  message: string;
+}
+export interface UpdateProfileResponseDto {
+  success: boolean;
+  message: string;
+  admin?: {
+    username: string;
+    email: string;
+    profile_image: string | null;
+  };
+}

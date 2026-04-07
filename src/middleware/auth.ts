@@ -20,13 +20,8 @@ export const verifyToken = (
 
   try {
     const secret = process.env.JWT_SECRET as string;
-
-    // Verify and cast the decoded object to our AuthUser type
     const decoded = jwt.verify(token, secret) as AuthUser;
-
-    // Now 'req.user' is type-safe!
     req.user = decoded;
-
     next();
   } catch (err) {
     return res.status(401).json({ error: "Invalid or expired token." });
