@@ -11,9 +11,9 @@ export const AppDataSource = new DataSource({
   type: "postgres",
   url: process.env.DB_CONNECTION_STRING,
   ssl: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: false, // Required for Neon
   },
-  synchronize: true, // Auto-creates tables in development
+  synchronize: true, // Auto-create tables in development
   logging: false,
   entities: [Admin, Teacher, Attendance],
 });
