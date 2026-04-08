@@ -16,13 +16,15 @@ export class Attendance {
   date!: string; // Format: YYYY-MM-DD
 
   @Column({ nullable: true })
-  checkInMethod?: string; 
+  checkInMethod?: string;
 
   @Column()
   status!: string; // Important: Check if you save 'present' or 'Present'
 
   // Link this to the 'attendances' array in your Teacher entity
-  @ManyToOne(() => Teacher, (teacher) => teacher.attendances, { onDelete: "CASCADE" })
+  @ManyToOne(() => Teacher, (teacher) => teacher.attendances, {
+    onDelete: "CASCADE",
+  })
   teacher!: Teacher;
 
   @CreateDateColumn()
