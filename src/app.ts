@@ -6,6 +6,7 @@ import attendanceRoutes from "./routes/attendentRoute";
 import dashboardRoute from "./routes/dashboardRoute";
 import path from "path"; // ← fixed
 
+
 const app: Application = express();
 
 app.use(

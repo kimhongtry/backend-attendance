@@ -1,4 +1,4 @@
-import multer, { FileFilterCallback, StorageEngine } from "multer";
+import multer, { StorageEngine, FileFilterCallback } from "multer";
 import { Request } from "express";
 import path from "path";
 import fs from "fs";
@@ -7,8 +7,8 @@ const uploadDir = "uploads/avatars";
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage: StorageEngine = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
+  destination: (_req: any, _file: any, cb: (arg0: null, arg1: string) => any) => cb(null, uploadDir),
+  filename: (_req: any, file: { originalname: string; }, cb: (arg0: null, arg1: string) => void) => {
     const ext = path.extname(file.originalname);
     cb(null, `avatar-${Date.now()}${ext}`);
   },

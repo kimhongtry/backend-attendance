@@ -5,6 +5,7 @@ import { ChangePasswordRequestDto } from "../dtos/request/auth";
 
 interface CustomRequest extends Request {
   user?: { id: number };
+  file?: Express.Multer.File;
 }
 
 const authService = new AuthService();
