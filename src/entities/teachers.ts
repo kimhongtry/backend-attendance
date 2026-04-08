@@ -16,4 +16,5 @@ export class Teacher {
 
   @Column()
   room!: string; // Matches 'room' in your screenshot
+  attendances: any;
 }

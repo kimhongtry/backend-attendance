@@ -6,6 +6,7 @@ import attendanceRoutes from "./routes/attendentRoute"; //  ADDED — was missin
 import dashboardRoute from "./routes/dashboardRoute"; // FIXED: 'd' instead of 't'
 import path from "path/win32";
 
+
 const app: Application = express();
 
 // ✅ Single CORS config — duplicates removed
