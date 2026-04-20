@@ -24,7 +24,7 @@ AppDataSource.initialize()
     // This tells the server to listen to the Wi-Fi, not just your laptop.
     app.listen(Number(PORT), "0.0.0.0", () => {
       console.log(`🚀 Server is listening on 0.0.0.0:${PORT}`);
-      console.log(`🌐 Phone should visit: http://192.168.11.36:5000`);
+      console.log(`🌐 Phone should visit: http://192.168.11.41:${PORT}`);
     });
   })
   .catch((error) => console.log("❌ Connection error:", error));
