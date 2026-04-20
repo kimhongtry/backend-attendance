@@ -4,7 +4,7 @@ import { AppDataSource } from "./config/db";
 
 // 1. Setup Port and IP
 const PORT = process.env.PORT || 5000;
-const IP_ADDRESS = "192.168.11.36"; // Your current Ubuntu IP
+const IP_ADDRESS = "192.168.11.41"; // Your current Ubuntu IP
 
 // 2. Health Check (To test on your phone browser)
 app.get("/", (req, res) => {

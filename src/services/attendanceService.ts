@@ -24,56 +24,56 @@ export class AttendanceService {
   private teacherRepo = AppDataSource.getRepository(Teacher);
 
   async markTeachersAttendance(
-  data: MarkAttendanceRequestDto,
-): Promise<AttendanceResponseDto> {
-  const { date, records } = data;
+    data: MarkAttendanceRequestDto,
+  ): Promise<AttendanceResponseDto> {
+    const { date, records } = data;
 
-  if (!records || Object.keys(records).length === 0) {
+    if (!records || Object.keys(records).length === 0) {
+      return {
+        success: true,
+        message: "No attendance records to process.",
+        count: 0,
+      };
+    }
+
+    const savePromises = Object.entries(records).map(
+      async ([teacherId, status]) => {
+        const id = parseInt(teacherId);
+
+        // ✅ Check for an existing record for this teacher on this date
+        const existing = await this.repo.findOne({
+          where: {
+            date,
+            teacher: { id },
+          },
+        });
+
+        if (existing) {
+          // ✅ UPDATE the existing record instead of creating a duplicate
+          existing.status = status as string;
+          existing.checkInMethod = "MANUAL";
+          return this.repo.save(existing);
+        }
+
+        // ✅ CREATE a new record if none exists
+        const newRecord = this.repo.create({
+          date,
+          status: status as string,
+          checkInMethod: "MANUAL",
+          teacher: { id } as any,
+        });
+        return this.repo.save(newRecord);
+      },
+    );
+
+    const results = await Promise.all(savePromises);
+
     return {
       success: true,
-      message: "No attendance records to process.",
-      count: 0,
+      message: "Attendance recorded successfully!",
+      count: results.length,
     };
   }
-
-  const savePromises = Object.entries(records).map(
-    async ([teacherId, status]) => {
-      const id = parseInt(teacherId);
-
-      // ✅ Check for an existing record for this teacher on this date
-      const existing = await this.repo.findOne({
-        where: {
-          date,
-          teacher: { id },
-        },
-      });
-
-      if (existing) {
-        // ✅ UPDATE the existing record instead of creating a duplicate
-        existing.status = status as string;
-        existing.checkInMethod = "MANUAL";
-        return this.repo.save(existing);
-      }
-
-      // ✅ CREATE a new record if none exists
-      const newRecord = this.repo.create({
-        date,
-        status: status as string,
-        checkInMethod: "MANUAL",
-        teacher: { id } as any,
-      });
-      return this.repo.save(newRecord);
-    },
-  );
-
-  const results = await Promise.all(savePromises);
-
-  return {
-    success: true,
-    message: "Attendance recorded successfully!",
-    count: results.length,
-  };
-}
   // ─────────────────────────────────────────────
   // Daily report for a specific date
   // ─────────────────────────────────────────────

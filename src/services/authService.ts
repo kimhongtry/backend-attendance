@@ -11,7 +11,7 @@ import { ChangePasswordResponseDto } from "../dtos/response/auth";
 import { UpdateProfileRequestDto } from "../dtos/request/auth";
 import { UpdateProfileResponseDto } from "../dtos/response/auth";
 
-const BASE_URL = process.env.BASE_URL || "http://192.168.11.36:5000";
+const BASE_URL = process.env.BASE_URL;
 export class AuthService {
   private adminRepo = AppDataSource.getRepository(Admin);
 
