@@ -1,17 +1,52 @@
 version: '3.8'
 
 services:
+  # --- Database Service ---
+  db:
+    image: postgres:16
+    container_name: attendance-db
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vicheka -d eka"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- API Service (Moved inside services mapping) ---
   attendance-api:
     build: .
     container_name: attendance-api
     ports:
       - "5000:5000"
-    env_file:
-      - .env
-    # --- ADD THIS SECTION ---
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # ------------------------
     restart: always
-    environment:
-      - TZ=Asia/Phnom_Penh
+    volumes:
+      - ./uploads:/app/uploads  # Persists your uploads to your local machine
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+# --- Top Level Volumes ---
+volumes:
+  postgres_data:

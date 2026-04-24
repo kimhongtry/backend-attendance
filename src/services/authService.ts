@@ -11,7 +11,7 @@ import { ChangePasswordResponseDto } from "../dtos/response/auth";
 import { UpdateProfileRequestDto } from "../dtos/request/auth";
 import { UpdateProfileResponseDto } from "../dtos/response/auth";
 
-const BASE_URL = process.env.BASE_URL || "http://192.168.11.41:5000";
+const BASE_URL = process.env.BASE_URL;
 export class AuthService {
   private adminRepo = AppDataSource.getRepository(Admin);
 
@@ -28,10 +28,19 @@ export class AuthService {
       return { success: false, message: "Invalid email or password" };
     }
 
-    const isMatch = await bcrypt.compare(password, admin.password_hash);
-    if (!isMatch) {
-      return { success: false, message: "Invalid email or password" };
-    }
+  const isDev = process.env.DEV_MODE === "true";
+
+  let isMatch: boolean;
+
+  if (isDev) {
+    // ⚡ DEV MODE: plain password compare
+    isMatch = password === admin.password_hash;
+  } else {
+    // 🔐 PRODUCTION MODE: bcrypt
+    isMatch = await bcrypt.compare(password, admin.password_hash);
+  }    if (!isMatch) {
+        return { success: false, message: "Invalid email or password" };
+      }
 
     // 3. Generate Token
     const secret = process.env.JWT_SECRET as string;

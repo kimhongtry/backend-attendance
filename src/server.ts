@@ -3,7 +3,7 @@ import app from "./app";
 import { AppDataSource } from "./config/db";
 
 const PORT = process.env.PORT || 5000;
-const IP_ADDRESS = "192.168.11.41";
+const IP_ADDRESS = "192.168.11.41"; // Your current Ubuntu IP
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
@@ -19,7 +19,8 @@ app.get("/", (req, res) => {
 // ── Connect Database then Start Server ────────────────────────────────────────
 AppDataSource.initialize()
   .then(() => {
-    console.log("🚀 Database connected to Neon!");
+    console.log("🚀 Database connected successfully!");
+    console.log("📊 DB Status:", AppDataSource.isInitialized);
 
     app.listen(Number(PORT), "0.0.0.0", () => {
       console.log(`✅ Server is listening on 0.0.0.0:${PORT}`);
@@ -30,3 +31,4 @@ AppDataSource.initialize()
     console.log("❌ Database connection error:", error);
     process.exit(1);
   });
+  
