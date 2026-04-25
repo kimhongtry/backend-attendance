@@ -1,3 +1,26 @@
+# version: "3.8"
+
+# services:
+#   attendance-api:
+#     build: .
+#     container_name: fast-tech-attendance-api
+#     restart: always
+#     # Port 5000 is internal; Nginx Proxy Manager will find it here
+#     expose:
+#       - "5000"
+#     volumes:
+#       - attendance_uploads:/app/uploads
+#     env_file:
+#       - .env
+#     networks:
+#       - proxy
+
+# networks:
+#   proxy:
+#     external: true
+
+# volumes:
+#   attendance_uploads:
 version: "3.8"
 
 services:
@@ -5,19 +28,12 @@ services:
     build: .
     container_name: fast-tech-attendance-api
     restart: always
-    # Port 5000 is internal; Nginx Proxy Manager will find it here
-    expose:
-      - "5000"
+    ports:
+      - "5000:5000" # ✅ EXPOSE port to host so frontend can reach it
     volumes:
       - attendance_uploads:/app/uploads
     env_file:
       - .env
-    networks:
-      - proxy
-
-networks:
-  proxy:
-    external: true
 
 volumes:
   attendance_uploads:
