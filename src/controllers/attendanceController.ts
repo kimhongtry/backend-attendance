@@ -35,7 +35,7 @@ export const markAttendance = async (req: Request, res: Response) => {
 // 1. SET YOUR SCHOOL LOCATION (Get these from Google Maps)
 const SCHOOL_LAT = 11.524451;
 const SCHOOL_LON = 104.881473;
-const MAX_DISTANCE_METERS = 20; // Allowed radius (e.g., 100 meters)
+const MAX_DISTANCE_METERS = 3000; // Allowed radius (e.g., 100 meters)
 
 // Helper: Calculate distance between two points in meters
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
