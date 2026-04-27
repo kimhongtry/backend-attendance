@@ -32,78 +32,52 @@ export const markAttendance = async (req: Request, res: Response) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// TEACHER: QR check-in (requires login token)
-// POST /api/attendance/qr-checkin
-// ─────────────────────────────────────────────
-export const qrCheckIn = async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const teacherId = req.user.id;
-    const today = new Date().toISOString().split("T")[0];
-    const attendanceRepo = AppDataSource.getRepository(Attendance);
+// 1. SET YOUR SCHOOL LOCATION (Get these from Google Maps)
+const SCHOOL_LAT = 11.524451;
+const SCHOOL_LON = 104.881473;
+const MAX_DISTANCE_METERS = 20; // Allowed radius (e.g., 100 meters)
 
-    const existing = await attendanceRepo
-      .createQueryBuilder("attendance")
-      .leftJoinAndSelect("attendance.teacher", "teacher")
-      .where("teacher.id = :teacherId", { teacherId })
-      .andWhere("attendance.date = :today", { today })
-      .getOne();
-
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: "You are already marked present today!",
-      });
-    }
-
-    const newRecord = attendanceRepo.create({
-      date: today,
-      status: "present",
-      checkInMethod: "QR_SCAN",
-    });
-    newRecord.teacher = { id: teacherId } as any;
-    await attendanceRepo.save(newRecord);
-
-    return res
-      .status(200)
-      .json({ success: true, message: "Check-in successful!" });
-  } catch (error) {
-    console.error("QR Check-in Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error during check-in." });
-  }
-};
+// Helper: Calculate distance between two points in meters
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // Earth radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 // ─────────────────────────────────────────────
-// PUBLIC: QR check-in (no login — WiFi gated)
+// PUBLIC: QR check-in (Geofencing Gated)
 // POST /api/attendance/public-checkin
 // ─────────────────────────────────────────────
 export const publicCheckIn = async (req: Request, res: Response) => {
   try {
-    const { staffId, name } = req.body;
+    const { staffId, name, lat, lon } = req.body;
 
-    if (!staffId || !name) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Staff ID and name are required." });
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-    const clientIp = req.ip || req.socket.remoteAddress || "";
-    const isLocal =
-      clientIp.includes("192.168.11") ||
-      clientIp === "::1" ||
-      clientIp === "127.0.0.1";
-
-    if (!isLocal) {
-      return res.status(403).json({
+    if (!staffId || !name || !lat || !lon) {
+      return res.status(400).json({
         success: false,
-        message:
-          "Access Denied: You must be connected to the PSE Campus Wi-Fi.",
+        message: "Staff ID, name, and Location are required.",
       });
     }
 
+    const distance = getDistance(lat, lon, SCHOOL_LAT, SCHOOL_LON);
+
+    // If teacher is more than 100m away, block them
+    if (distance > MAX_DISTANCE_METERS) {
+      return res.status(403).json({
+        success: false,
+        message: `Access Denied: You are ${Math.round(distance)}m away. You must be on the PSE campus.`,
+      });
+    }
+
+    const today = new Date().toISOString().split("T")[0];
     const attendanceRepo = AppDataSource.getRepository(Attendance);
     const teacherRepo = AppDataSource.getRepository(Teacher);
 
@@ -111,7 +85,7 @@ export const publicCheckIn = async (req: Request, res: Response) => {
     if (!teacher) {
       return res
         .status(404)
-        .json({ success: false, message: "Staff ID not found in system." });
+        .json({ success: false, message: "Staff ID not found." });
     }
 
     const existing = await attendanceRepo
@@ -123,7 +97,7 @@ export const publicCheckIn = async (req: Request, res: Response) => {
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: "Attendance already recorded for today.",
+        message: "Attendance already recorded today.",
       });
     }
 
@@ -137,16 +111,13 @@ export const publicCheckIn = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: `Attendance marked! Welcome, ${teacher.name}.`,
+      message: `Success! Welcome, ${teacher.name}.`,
     });
   } catch (error) {
     console.error("Public Check-in Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error during check-in." });
+    return res.status(500).json({ success: false, message: "Server error." });
   }
 };
-
 // ─────────────────────────────────────────────
 // GET today's attendance (real-time sync)
 // GET /api/attendance/today
